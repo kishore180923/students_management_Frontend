@@ -128,7 +128,7 @@ const StudentPage = () => {
           </div>
 
           {/* Students Table */}
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="bg-white rounded-xl shadow-md ">
             {isLoading ? (
               <div className="p-8 flex justify-center items-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>

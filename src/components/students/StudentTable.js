@@ -74,7 +74,7 @@ const StudentTable = ({ students, setEditingStudent, deleteStudent }) => {
   };
 
   return (
-    <div className="relative shadow-md sm:rounded-lg">
+    <div className="relative ">
       {/* View Student Modal */}
       {showViewModal && viewingStudent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -247,7 +247,7 @@ const StudentTable = ({ students, setEditingStudent, deleteStudent }) => {
             students.map((student, index) => (
               <tr key={student._id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">{index + 1}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 uppercase">
                   {student.admissionNumber}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
