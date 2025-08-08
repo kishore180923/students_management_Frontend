@@ -24,31 +24,53 @@ const StudentTable = ({ students, setEditingStudent, deleteStudent }) => {
     setDropdownOpen(null);
   };
 
+  const confirmDelete = async () => {
+    try {
+      await deleteStudent(studentToDelete._id);
+      setShowDeleteModal(false);
+      toast.success('Student deleted successfully!', {
+        position: 'top-center',
+        autoClose: 3000,
+      });
+    } catch (error) {
+      toast.error('Error deleting student', {
+        position: 'top-center',
+        autoClose: 3000,
+      });
+    }
+  };
+
   const handleViewClick = (student) => {
     setViewingStudent(student);
     setShowViewModal(true);
     setDropdownOpen(null);
   };
 
-  const confirmDelete = () => {
-    deleteStudent(studentToDelete._id);
-    setShowDeleteModal(false);
-    toast.success('Student deleted successfully!', {
-      position: "top-center",
-      autoClose: 3000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-    });
-  };
+  const handleDownloadStudentData = async (student) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/students/${student._id}/download`);
+      if (!response.ok) throw new Error('Failed to download student data');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${student.admissionNumber}_data.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
 
-  const handleDownload = (student) => {
-    toast.info(`Downloading details for ${student.name}`, {
-      position: "top-center",
-      autoClose: 2000,
-    });
-    console.log('Downloading student data:', student);
+      toast.success(`Downloaded data for ${student.name}`, {
+        position: 'top-center',
+        autoClose: 2000,
+      });
+    } catch (error) {
+      toast.error('Error downloading student data', {
+        position: 'top-center',
+        autoClose: 3000,
+      });
+    }
   };
 
   return (
@@ -73,7 +95,6 @@ const StudentTable = ({ students, setEditingStudent, deleteStudent }) => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Student Photo */}
                 <div className="col-span-1 flex justify-center">
                   {viewingStudent.photo ? (
                     <img
@@ -89,7 +110,6 @@ const StudentTable = ({ students, setEditingStudent, deleteStudent }) => {
                   )}
                 </div>
 
-                {/* Student Details */}
                 <div className="col-span-1 md:col-span-2">
                   <div className="space-y-4">
                     <div>
@@ -98,7 +118,6 @@ const StudentTable = ({ students, setEditingStudent, deleteStudent }) => {
                       </h4>
                       <p className="text-gray-600">{viewingStudent.admissionNumber}</p>
                     </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm font-medium text-gray-500">Department</p>
@@ -127,21 +146,41 @@ const StudentTable = ({ students, setEditingStudent, deleteStudent }) => {
                         <p className="font-medium">{viewingStudent.gender}</p>
                       </div>
                     </div>
-
                     <div>
                       <p className="text-sm font-medium text-gray-500">Address</p>
                       <p className="font-medium">{viewingStudent.address}</p>
                     </div>
-
                     <div>
                       <p className="text-sm font-medium text-gray-500">Guardian Contact</p>
                       <p className="font-medium">{viewingStudent.guardianContact || 'N/A'}</p>
                     </div>
+                    {viewingStudent.documents?.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Documents</p>
+                        <ul className="space-y-2">
+                          {viewingStudent.documents.map((doc, index) => (
+                            <li key={index} className="flex items-center">
+                              <svg className="h-5 w-5 text-blue-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                              </svg>
+                              <a
+                                href={`http://localhost:5000/api/students/${viewingStudent._id}/document/${doc._id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 hover:underline"
+                              >
+                                {doc.name}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex justify-end space-x-3">
                 <button
                   onClick={() => {
                     setEditingStudent(viewingStudent);
@@ -150,6 +189,12 @@ const StudentTable = ({ students, setEditingStudent, deleteStudent }) => {
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                 >
                   Edit Student
+                </button>
+                <button
+                  onClick={() => handleDownloadStudentData(viewingStudent)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                >
+                  Download All Data
                 </button>
               </div>
             </div>
@@ -193,6 +238,7 @@ const StudentTable = ({ students, setEditingStudent, deleteStudent }) => {
             <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Department</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Year</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Contact</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Documents</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
@@ -236,18 +282,37 @@ const StudentTable = ({ students, setEditingStudent, deleteStudent }) => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
                   {student.mobileNumber}
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {student.documents?.length > 0 ? (
+                    <ul className="space-y-1">
+                      {student.documents.map((doc, idx) => (
+                        <li key={idx}>
+                          <a
+                            href={`http://localhost:5000/api/students/${student._id}/document/${doc._id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 hover:underline"
+                          >
+                            {doc.name}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span>No documents</span>
+                  )}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 relative">
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => handleDownload(student)}
+                      onClick={() => handleDownloadStudentData(student)}
                       className="p-1.5 rounded-md bg-indigo-100 text-indigo-600 hover:bg-indigo-200 transition-colors"
-                      title="Download"
+                      title="Download All Data"
                     >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                       </svg>
                     </button>
-                    
                     <button
                       onClick={() => toggleDropdown(student._id)}
                       className="p-1.5 border border-gray-300 rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition-colors"
@@ -257,7 +322,6 @@ const StudentTable = ({ students, setEditingStudent, deleteStudent }) => {
                       </svg>
                     </button>
                   </div>
-                  
                   {dropdownOpen === student._id && (
                     <div className="origin-top-right absolute right-10 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
                       <div className="py-1" role="menu" aria-orientation="vertical">
@@ -303,7 +367,7 @@ const StudentTable = ({ students, setEditingStudent, deleteStudent }) => {
             ))
           ) : (
             <tr>
-              <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
+              <td colSpan="9" className="px-6 py-4 text-center text-gray-500">
                 <div className="flex flex-col items-center justify-center py-12">
                   <svg className="h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
