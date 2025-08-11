@@ -167,7 +167,7 @@ const StudentTable = ({ students, setEditingStudent, deleteStudent }) => {
                                 href={`http://localhost:5000/api/students/${viewingStudent._id}/document/${doc._id}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-800 hover:underline"
+                                className=""
                               >
                                 {doc.name}
                               </a>
@@ -238,7 +238,7 @@ const StudentTable = ({ students, setEditingStudent, deleteStudent }) => {
             <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Department</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Year</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Contact</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Documents</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Email</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
@@ -282,25 +282,8 @@ const StudentTable = ({ students, setEditingStudent, deleteStudent }) => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
                   {student.mobileNumber}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {student.documents?.length > 0 ? (
-                    <ul className="space-y-1">
-                      {student.documents.map((doc, idx) => (
-                        <li key={idx}>
-                          <a
-                            href={`http://localhost:5000/api/students/${student._id}/document/${doc._id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800 hover:underline"
-                          >
-                            {doc.name}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span>No documents</span>
-                  )}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
+                  {student.email}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 relative">
                   <div className="flex items-center space-x-2">

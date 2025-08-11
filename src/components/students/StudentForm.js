@@ -1,3 +1,4 @@
+// components/StudentForm.jsx
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -20,6 +21,9 @@ const StudentForm = ({ fetchStudents, editingStudent, setEditingStudent, onClose
   });
 
   const [preview, setPreview] = useState(null);
+  const [existingDocuments, setExistingDocuments] = useState([]);
+  const [deletedDocumentIds, setDeletedDocumentIds] = useState([]);
+  const [deletePhotoFlag, setDeletePhotoFlag] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -33,6 +37,9 @@ const StudentForm = ({ fetchStudents, editingStudent, setEditingStudent, onClose
         documents: [],
       };
       setForm(formattedStudent);
+      setExistingDocuments(editingStudent.documents || []);
+      setDeletedDocumentIds([]);
+      setDeletePhotoFlag(false);
       if (editingStudent.photo) {
         setPreview(`http://localhost:5000${editingStudent.photo}`);
       }
@@ -56,6 +63,9 @@ const StudentForm = ({ fetchStudents, editingStudent, setEditingStudent, onClose
       photo: null,
       documents: [],
     });
+    setExistingDocuments([]);
+    setDeletedDocumentIds([]);
+    setDeletePhotoFlag(false);
     setPreview(null);
   };
 
@@ -64,6 +74,7 @@ const StudentForm = ({ fetchStudents, editingStudent, setEditingStudent, onClose
     if (name === 'photo') {
       const file = files[0];
       setForm({ ...form, [name]: file });
+      setDeletePhotoFlag(false);
       if (file) {
         const reader = new FileReader();
         reader.onloadend = () => setPreview(reader.result);
@@ -73,6 +84,14 @@ const StudentForm = ({ fetchStudents, editingStudent, setEditingStudent, onClose
       }
     } else {
       setForm({ ...form, [name]: value });
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setPreview(null);
+    setForm({ ...form, photo: null });
+    if (editingStudent?.photo) {
+      setDeletePhotoFlag(true);
     }
   };
 
@@ -104,6 +123,11 @@ const StudentForm = ({ fetchStudents, editingStudent, setEditingStudent, onClose
     }));
   };
 
+  const removeExistingDocument = (id) => {
+    setExistingDocuments(prev => prev.filter(doc => doc._id !== id));
+    setDeletedDocumentIds(prev => [...prev, id]);
+  };
+
   const validateForm = () => {
     setError('');
 
@@ -126,11 +150,6 @@ const StudentForm = ({ fetchStudents, editingStudent, setEditingStudent, onClose
 
     if (!/\S+@\S+\.\S+/.test(form.email)) {
       setError('Invalid email format.');
-      return false;
-    }
-
-    if (form.guardianContact && !/^\d{10}$/.test(form.guardianContact)) {
-      setError('Guardian contact must be 10 digits if provided.');
       return false;
     }
 
@@ -157,6 +176,14 @@ const StudentForm = ({ fetchStudents, editingStudent, setEditingStudent, onClose
         formData.append(key, form[key]);
       }
     });
+
+    if (deletePhotoFlag) {
+      formData.append('deletePhoto', 'true');
+    }
+
+    if (deletedDocumentIds.length > 0) {
+      formData.append('deletedDocuments', JSON.stringify(deletedDocumentIds));
+    }
 
     try {
       if (editingStudent) {
@@ -299,7 +326,9 @@ const StudentForm = ({ fetchStudents, editingStudent, setEditingStudent, onClose
                       required
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     />
+
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Gender <span className="text-red-500">*</span>
@@ -401,6 +430,7 @@ const StudentForm = ({ fetchStudents, editingStudent, setEditingStudent, onClose
                       placeholder="Permanent address..."
                     />
                   </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Guardian Contact
@@ -414,6 +444,8 @@ const StudentForm = ({ fetchStudents, editingStudent, setEditingStudent, onClose
                       placeholder="Optional"
                     />
                   </div>
+
+
                 </div>
               </div>
 
@@ -436,7 +468,7 @@ const StudentForm = ({ fetchStudents, editingStudent, setEditingStudent, onClose
                     )}
                   </div>
                   <label className="cursor-pointer bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    {form.photo ? 'Change Photo' : 'Upload Photo'}
+                    {form.photo || preview ? 'Change Photo' : 'Upload Photo'}
                     <input
                       type="file"
                       name="photo"
@@ -445,6 +477,15 @@ const StudentForm = ({ fetchStudents, editingStudent, setEditingStudent, onClose
                       className="sr-only"
                     />
                   </label>
+                  {preview && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      className="mt-2 text-sm text-red-600 hover:text-red-800"
+                    >
+                      Delete Photo
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -482,7 +523,7 @@ const StudentForm = ({ fetchStudents, editingStudent, setEditingStudent, onClose
                   </div>
                   {form.documents.length > 0 && (
                     <div className="mt-4">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Selected Documents:</p>
+                      <p className="text-sm font-medium text-gray-700 mb-2">New Documents:</p>
                       <ul className="space-y-2">
                         {form.documents.map((doc, index) => (
                           <li key={index} className="flex items-center justify-between bg-white p-3 rounded border border-gray-200">
@@ -508,23 +549,34 @@ const StudentForm = ({ fetchStudents, editingStudent, setEditingStudent, onClose
                       </ul>
                     </div>
                   )}
-                  {editingStudent?.documents?.length > 0 && (
+                  {existingDocuments.length > 0 && (
                     <div className="mt-4">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Previously Uploaded Documents:</p>
+                      <p className="text-sm font-medium text-gray-700 mb-2">Existing Documents:</p>
                       <ul className="space-y-2">
-                        {editingStudent.documents.map((doc, index) => (
-                          <li key={index} className="flex items-center bg-white p-3 rounded border border-gray-200">
-                            <svg className="h-5 w-5 text-blue-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                            </svg>
-                            <a
-                              href={`http://localhost:5000/api/students/${editingStudent._id}/document/${doc._id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate flex-1"
+                        {existingDocuments.map((doc) => (
+                          <li key={doc._id} className="flex items-center justify-between bg-white p-3 rounded border border-gray-200">
+                            <div className="flex items-center">
+                              <svg className="h-5 w-5 text-blue-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                              </svg>
+                              <a
+                                href={`http://localhost:5000/api/students/${editingStudent._id}/document/${doc._id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate max-w-xs"
+                              >
+                                {doc.name}
+                              </a>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeExistingDocument(doc._id)}
+                              className="text-red-500 hover:text-red-700"
                             >
-                              {doc.name}
-                            </a>
+                              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                            </button>
                           </li>
                         ))}
                       </ul>

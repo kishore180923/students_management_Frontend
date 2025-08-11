@@ -10,6 +10,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer, Bounce } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { FaCalendar } from "react-icons/fa";
 
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
@@ -271,6 +272,33 @@ export default function Signup() {
                       className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     />
                   </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Date of Birth*
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaCalendar className="text-gray-400" />
+                    </div>
+                    <input
+                      type="date"
+                      name="dob"
+                      value={formData.dob}
+                      onChange={handleChange}
+                      className={`w-full pl-10 p-3 border ${
+                        errors.dob ? "border-red-500" : "border-gray-300"
+                      } rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500`}
+                    />
+                    {errors.dob && (
+                      <div className="absolute right-3 top-3 text-red-500">
+                        <FaExclamationCircle />
+                      </div>
+                    )}
+                  </div>
+                  {errors.dob && (
+                    <p className="mt-1 text-sm text-red-600">{errors.dob}</p>
+                  )}
                 </div>
 
                 {/* Email */}
